@@ -80,16 +80,20 @@ WSGI_APPLICATION = "ai_blog_app.wsgi.application"
 #         "NAME": BASE_DIR / "db.sqlite3",
 #     }
 # }
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": '',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
+
+        "NAME": "postgres",        # 🐘 matches POSTGRES_DB
+        "USER": "postgres",        # 👤 matches POSTGRES_USER
+        "PASSWORD": "password",    # 🔐 matches POSTGRES_PASSWORD
+
+        'HOST': '127.0.0.1',       # 🌐
+        "PORT": "5432",            # 🔌 exposed DB port
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
