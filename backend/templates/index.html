@@ -101,8 +101,8 @@
             const blogContent = document.getElementById('blogContent');
             if (youtubeLink) {
                 document.getElementById('loading-circle').style.display = 'block';
-                blogContent.innerHTML = ''; // why innerHTML instead of value like document.getElementById('youtubeLink').value;
-                const endpointUrl = '/generate-blog';
+                blogContent.innerHTML = ''; 
+                const endpointUrl = '/generate-blog/';
                 try {
                     const response = await fetch(endpointUrl, {
                         method: 'POST',
@@ -111,11 +111,11 @@
                         },
                         body: JSON.stringify({ link: youtubeLink })
                     });
-                    const data = await response.json(); // why use await when we already const response = await, which means we already got response
+                    const data = await response.json(); 
                     blogContent.innerHTML = data.content;
                 } catch (error) {
-                    console.error("Error occurred: ", error); // does browers's console or backend console log this
-                    alert("Something went wrong. Please try again later...") // is alert a message displayed on top of screen or?
+                    console.error("Error occurred: ", error); 
+                    alert("Something went wrong. Please try again later...")
                 }
                 document.getElementById('loading-circle').style.display = 'none';
             } else {
