@@ -49,13 +49,9 @@ def yt_title(link):
         print("YT TITLE ERROR:", e)
         return None
 
-
 def download_audio(link):
     """Removed — not used, return None"""
     return None
-
-
-
 
 def get_transcription(link):
     """Fetch YouTube auto-generated transcript correctly"""
@@ -77,9 +73,6 @@ def get_transcription(link):
         print("TRANSCRIPT ERROR:", e)
         return None
 
-
-
-
 def generate_blog_from_transcript(transcription):
     """Generate blog from title + description"""
     prompt = f"""
@@ -97,8 +90,6 @@ def generate_blog_from_transcript(transcription):
         max_tokens=1200
     )
     return response.choices[0].message.content
-
-
 
 @csrf_exempt
 def generate_blog(request):
@@ -170,3 +161,14 @@ def user_signup(request):
         else:
             return render(request, 'signup.html', {'error_message': 'Passwords do not match...'})
     return render(request, 'signup.html')
+
+def blog_list(request):
+    blogs = BlogPost.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'all-blogs.html', {'blogs': blogs})
+
+def blog_details(request, pk):
+    blog = BlogPost.objects.get(pk=pk)
+    if request.user != blog.user:
+        return redirect('/')
+    else:
+        return render(request, 'blog-details.html', {'blog': blog})

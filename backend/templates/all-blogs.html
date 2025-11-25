@@ -24,19 +24,19 @@
             <section>
                 <h2 class="text-xl mb-4 font-semibold">All Blog Posts</h2>
                 <div class="space-y-4">
+                    {% for blog in blogs %}
+                    <a href="{% url 'blog-details' blog.pk %}" class="hover:underline">
+                
                     <div class="border border-gray-300 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold">Blog Post Title1</h3>
-                        <p>This is the content of the blog post. Lorem ipsum dolor sit ament...</p>
+                        <h3 class="text-lg font-semibold">{{ blog.youtube_title }}</h3>
+                        <!-- Store Markdown safely -->
+                        <p>
+                            {{ blog.generated_content|truncatechars:80 }}
+                        </p>
+
                     </div>
-                    <div class="border border-gray-300 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold">Blog Post Title1</h3>
-                        <p>This is the content of the blog post. Lorem ipsum dolor sit ament...</p>
-                    </div>
-                    <div class="border border-gray-300 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold">Blog Post Title1</h3>
-                        <p>This is the content of the blog post. Lorem ipsum dolor sit ament...</p>
-                    </div>
-                    <!-- Repeat -->
+                    </a>
+                    {% endfor %}
 
                 </div>
             </section>
