@@ -12,6 +12,8 @@ from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi  # UPDATED
 import os
 
+from .models import BlogPost
+
 load_dotenv() 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))  # UPDATED
 
@@ -118,6 +120,14 @@ def generate_blog(request):
         blog_content = generate_blog_from_transcript(transcription)
         if not blog_content:
             return JsonResponse({'error': 'Failed to generate blog article'}, status=500)
+        
+        new_blog = BlogPost(
+            user=request.user,
+            youtube_title= title,
+            youtube_link=yt_link,
+            generated_content=blog_content
+        )
+        new_blog.save()
 
         return JsonResponse({'content': blog_content})
     else:
