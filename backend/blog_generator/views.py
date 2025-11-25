@@ -1,5 +1,4 @@
 import json
-import os
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -7,70 +6,141 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from pytube import YouTube
-import assemblyai as aai
+
+# OpenAI client
+from openai import OpenAI
+client = OpenAI(api_key="REDACTED")  # UPDATED
+
+from googleapiclient.discovery import build
+
+# UPDATED: install youtube-transcript-api first
+# pip install youtube-transcript-api
+
+from youtube_transcript_api import YouTubeTranscriptApi  # UPDATED
+
+# YouTube API client
+youtube = build("youtube", "v3", developerKey="AIzaSyCWZcEuRnbJQcq11W_Knx2Ssw0WPKbNHxk")  # UPDATED
 
 
 @login_required
 def index(request):
     return render(request, 'index.html')
 
+
 def yt_title(link):
-    yt = YouTube(link)
-    return yt.title
+    """Return title using YouTube Data API"""
+    try:
+        from urllib.parse import urlparse, parse_qs
+        url_data = urlparse(link)
+        query = parse_qs(url_data.query)
+        video_id = query.get("v")
+        if not video_id:
+            video_id = [url_data.path.split("/")[-1]]
+        video_id = video_id[0]
+
+        request = youtube.videos().list(
+            part="snippet",
+            id=video_id
+        )
+        response = request.execute()
+        items = response.get("items")
+        if not items:
+            return None
+        return items[0]["snippet"]["title"]
+    except Exception as e:
+        print("YT TITLE ERROR:", e)
+        return None
+
 
 def download_audio(link):
-    yt = YouTube(link)
-    video = yt.streams.filter(only_audio=True).first()
-    out_file = video.download(output_path=settings.MEDIA_ROOT)
-    base, ext = os.path.splitext(out_file)
-    new_file = base + '.mp3'
-    os.rename(out_file, new_file)
-    return new_file
+    """Removed — not used, return None"""
+    return None
+
+
+
 
 def get_transcription(link):
-    audio_file = download_audio(link)
-    aai.settings.api_key = "ef647f668cc54efba526b8efe70a0486"
-    transcriber = aai.transcriber()
-    transcript = transcriber.transcribe(audio_file)
-    return transcript.text
+    """Fetch YouTube auto-generated transcript correctly"""
+    try:
+        from urllib.parse import urlparse, parse_qs
+        url_data = urlparse(link)
+        query = parse_qs(url_data.query)
+        video_id = query.get("v")
+        if not video_id:
+            video_id = [url_data.path.split("/")[-1]]
+        video_id = video_id[0]
+
+        # ✅ Correct usage
+        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
+        transcript_text = " ".join([t['text'] for t in transcript_list])
+        return transcript_text
+
+    except Exception as e:
+        print("TRANSCRIPT ERROR:", e)
+        return None
+
+
+
+
+def generate_blog_from_transcript(transcription):
+    """Generate blog from title + description"""
+    prompt = f"""
+    Generate a blog post from the YouTube video metadata.
+    Make it super readable by using emojis, fonts, spacing, and horizontal lines.
+    Be personable, hand-holding, and visual.
+
+    Metadata/Description:
+    {transcription}
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1200
+    )
+    return response.choices[0].message.content
+
 
 
 @csrf_exempt
 def generate_blog(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body) # why this and not request.POST
+            data = json.loads(request.body)
             yt_link = data['link']
-            return JsonResponse({'content': yt_link})
         except (KeyError, json.JSONDecodeError):
-            return JsonResponse({'error': 'Invald data sent'}, status=400)
-        # get yt title
-        title = yt_title(yt_link)
+            return JsonResponse({'error': 'Invalid data sent'}, status=400)
 
-        # get transcript
-        # use open ai to generate the nlob
-        # save blog article to database
-        # return blog article as a response
+        title = yt_title(yt_link)
+        if not title:
+            return JsonResponse({'error': 'Could not fetch YouTube title'}, status=400)
+
+        transcription = get_transcription(yt_link)
+        if not transcription:
+            transcription = f"No description available for '{title}'"  # fallback
+
+        blog_content = generate_blog_from_transcript(transcription)
+        if not blog_content:
+            return JsonResponse({'error': 'Failed to generate blog article'}, status=500)
+
+        return JsonResponse({'content': blog_content})
     else:
         return JsonResponse({'error': 'Invalid method'}, status=405)
-    
 
-    
 
+# Auth views remain unchanged
 def user_login(request):
     if request.method == 'POST':
-        username= request.POST['username']
+        username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
             return redirect('/')
         else:
-            error_message = 'Invalid username or password'
-            return render(request, 'login.html', {'error_message': error_message})
-
+            return render(request, 'login.html', {'error_message': 'Invalid username or password'})
     return render(request, 'login.html')
+
 
 def user_logout(request):
     logout(request)
@@ -90,9 +160,7 @@ def user_signup(request):
                 login(request, user)
                 return redirect('/')
             except:
-                error_message = 'Something went wrong, please try again later...'
-                return render(request, 'signup.html', {'error_message': error_message})
+                return render(request, 'signup.html', {'error_message': 'Something went wrong, please try again later...'})
         else:
-            error_message = 'Passwords do not match...'
-            return render(request, 'signup.html', {'error_message': error_message})
+            return render(request, 'signup.html', {'error_message': 'Passwords do not match...'})
     return render(request, 'signup.html')

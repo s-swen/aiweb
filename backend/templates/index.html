@@ -95,6 +95,7 @@
     <footer class="text-center p-4 text-black mt-6">
         Powered by <a href="https://chatgpt.com/">ChatGPT</a>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         document.getElementById('generateBlogButton').addEventListener('click', async () => {
             const youtubeLink = document.getElementById('youtubeLink').value;
@@ -112,7 +113,7 @@
                         body: JSON.stringify({ link: youtubeLink })
                     });
                     const data = await response.json(); 
-                    blogContent.innerHTML = data.content;
+                    blogContent.innerHTML = marked.parse(data.content);
                 } catch (error) {
                     console.error("Error occurred: ", error); 
                     alert("Something went wrong. Please try again later...")
