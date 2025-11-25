@@ -6,21 +6,17 @@ from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-
-# OpenAI client
-from openai import OpenAI
-client = OpenAI(api_key="REDACTED")  # UPDATED
-
+from dotenv import load_dotenv
 from googleapiclient.discovery import build
-
-# UPDATED: install youtube-transcript-api first
-# pip install youtube-transcript-api
-
+from openai import OpenAI
 from youtube_transcript_api import YouTubeTranscriptApi  # UPDATED
+import os
+
+load_dotenv() 
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))  # UPDATED
 
 # YouTube API client
-youtube = build("youtube", "v3", developerKey="AIzaSyCWZcEuRnbJQcq11W_Knx2Ssw0WPKbNHxk")  # UPDATED
-
+youtube = build("youtube", "v3", developerKey=os.environ.get("YOUTUBE_API_KEY"))  # UPDATED
 
 @login_required
 def index(request):
